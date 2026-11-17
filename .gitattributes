@@ -1,0 +1,19 @@
+# Only export rules live here. Deliberately NO text/eol directives: line endings in this repo are
+# handled as they always have been, and adding eol rules now would rewrite files nobody asked to
+# change.
+
+# ⛔ THE WRITE-CAPABLE LIVE SUITE DOES NOT SHIP.
+#
+# tools/New-AdmPackage.ps1 builds the release zip from `git archive`, which takes every TRACKED
+# file. That zip is the thing somebody carries to a client site on a USB stick -- so without this
+# line, a script whose job is to CREATE AND DELETE DIRECTORY OBJECTS travels to every site the
+# toolkit does, by inheritance rather than by anyone deciding it should.
+#
+# tests/live/Invoke-AdmLiveTests.ps1 is deliberately NOT excluded: it is read-only by
+# construction, has no code path that can change a directory object, and is therefore safe to
+# point at anything -- including production. That is the distinction, and it is worth keeping
+# sharp: read-only ships everywhere, write-capable ships nowhere.
+#
+# ⚠ The file stays TRACKED and versioned -- this excludes it from the export, not from the repo.
+# Anyone working on the toolkit has it; anyone handed a release does not.
+tests/live/Verify-AdmWritePaths.ps1 export-ignore

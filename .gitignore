@@ -1,0 +1,16 @@
+# Runtime artefacts the toolkit creates beside itself. None of these belong in git:
+# the store holds credentials, the logs hold whatever went wrong, and the imported
+# copies are generated from a source that IS tracked.
+adadmin-store.json
+adadmin-scripts/
+adadmin-logs/
+
+# Files written for or by coding assistants do not belong in the repository.
+CLAUDE.md
+AGENTS.md
+MEMORY.md
+memory.md
+CONTRIBUTING.md
+.cursorrules
+.claude/
+.mcp.json

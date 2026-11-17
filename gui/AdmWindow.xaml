@@ -1,0 +1,1226 @@
+<Window
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Title="ADAdmin" Height="720" Width="1180" MinHeight="520" MinWidth="900"
+    WindowStyle="None" AllowsTransparency="True" Background="Transparent"
+    ResizeMode="CanResizeWithGrip" WindowStartupLocation="CenterScreen"
+    TextOptions.TextFormattingMode="Ideal" UseLayoutRounding="True">
+
+  <Window.Resources>
+    <!-- Palette. Dark glass = layered translucency over a near-black ground, with hairline
+         light borders picking out each pane's edge. Alpha does the work, not drop shadows. -->
+    <Color x:Key="AccentColor">#7DD3FC</Color>
+    <SolidColorBrush x:Key="Accent"        Color="#7DD3FC"/>
+    <SolidColorBrush x:Key="AccentSoft"    Color="#337DD3FC"/>
+    <SolidColorBrush x:Key="Violet"        Color="#A78BFA"/>
+    <SolidColorBrush x:Key="TextPrimary"   Color="#E8EAF2"/>
+    <SolidColorBrush x:Key="TextMuted"     Color="#98A0B3"/>
+    <SolidColorBrush x:Key="TextFaint"     Color="#68708A"/>
+    <SolidColorBrush x:Key="Danger"        Color="#FB7185"/>
+    <SolidColorBrush x:Key="Success"       Color="#6EE7B7"/>
+    <SolidColorBrush x:Key="Warn"          Color="#FCD34D"/>
+    <SolidColorBrush x:Key="GlassFill"     Color="#14FFFFFF"/>
+    <SolidColorBrush x:Key="GlassFillHi"   Color="#22FFFFFF"/>
+    <SolidColorBrush x:Key="GlassStroke"   Color="#26FFFFFF"/>
+    <SolidColorBrush x:Key="GlassStrokeHi" Color="#3DFFFFFF"/>
+    <!-- For a card that floats OVER live content rather than over a hidden pane. GlassFillHi is
+         a 13%-white tint meant to sit on the window ground; put it over the results grid and the
+         table reads straight through the form. This is near-opaque on purpose: a dialogue you
+         can read the page through is not a dialogue. -->
+    <SolidColorBrush x:Key="DialogFill"     Color="#F51A1E2A"/>
+    <SolidColorBrush x:Key="DialogVeil"     Color="#B3070910"/>
+
+    <LinearGradientBrush x:Key="WindowGround" StartPoint="0,0" EndPoint="1,1">
+      <GradientStop Color="#F2101018" Offset="0"/>
+      <GradientStop Color="#F20E1420" Offset="0.55"/>
+      <GradientStop Color="#F2141020" Offset="1"/>
+    </LinearGradientBrush>
+
+    <!-- A soft coloured wash behind the glass, so translucency has something to reveal.
+         Without this, "glass" just reads as flat grey. -->
+    <RadialGradientBrush x:Key="Bloom" GradientOrigin="0.15,0.1" Center="0.15,0.1" RadiusX="0.9" RadiusY="0.9">
+      <GradientStop Color="#3A7DD3FC" Offset="0"/>
+      <GradientStop Color="#00000000" Offset="1"/>
+    </RadialGradientBrush>
+    <RadialGradientBrush x:Key="Bloom2" GradientOrigin="0.9,0.95" Center="0.9,0.95" RadiusX="0.8" RadiusY="0.8">
+      <GradientStop Color="#33A78BFA" Offset="0"/>
+      <GradientStop Color="#00000000" Offset="1"/>
+    </RadialGradientBrush>
+
+    <Style x:Key="GlassPanel" TargetType="Border">
+      <Setter Property="Background" Value="{StaticResource GlassFill}"/>
+      <Setter Property="BorderBrush" Value="{StaticResource GlassStroke}"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="CornerRadius" Value="12"/>
+    </Style>
+
+    <!-- 8, not 999. A status chip sat immediately beside the mode buttons, so once those stopped
+         being ovals the lone remaining oval read as a stray artefact rather than a badge. -->
+    <Style x:Key="Chip" TargetType="Border">
+      <Setter Property="Background" Value="{StaticResource GlassFillHi}"/>
+      <Setter Property="BorderBrush" Value="{StaticResource GlassStroke}"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="CornerRadius" Value="8"/>
+      <Setter Property="Padding" Value="10,4"/>
+    </Style>
+
+    <Style x:Key="GhostButton" TargetType="Button">
+      <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+      <Setter Property="Background" Value="{StaticResource GlassFill}"/>
+      <Setter Property="BorderBrush" Value="{StaticResource GlassStroke}"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="Padding" Value="14,7"/>
+      <Setter Property="FontSize" Value="12.5"/>
+      <Setter Property="Cursor" Value="Hand"/>
+      <Setter Property="SnapsToDevicePixels" Value="True"/>
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="Button">
+            <Border x:Name="bd" CornerRadius="9" Background="{TemplateBinding Background}"
+                    BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}">
+              <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
+                                Margin="{TemplateBinding Padding}"/>
+            </Border>
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="bd" Property="Background" Value="{StaticResource GlassFillHi}"/>
+                <Setter TargetName="bd" Property="BorderBrush" Value="{StaticResource GlassStrokeHi}"/>
+              </Trigger>
+              <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Opacity" Value="0.35"/>
+              </Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+
+    <Style x:Key="AccentButton" TargetType="Button" BasedOn="{StaticResource GhostButton}">
+      <Setter Property="Background" Value="{StaticResource AccentSoft}"/>
+      <Setter Property="BorderBrush" Value="{StaticResource Accent}"/>
+      <Setter Property="Foreground" Value="#DFF3FF"/>
+    </Style>
+
+    <Style x:Key="DangerButton" TargetType="Button" BasedOn="{StaticResource GhostButton}">
+      <Setter Property="Foreground" Value="{StaticResource Danger}"/>
+      <Setter Property="BorderBrush" Value="#55FB7185"/>
+    </Style>
+
+    <Style x:Key="WindowButton" TargetType="Button" BasedOn="{StaticResource GhostButton}">
+      <Setter Property="Background" Value="Transparent"/>
+      <Setter Property="BorderThickness" Value="0"/>
+      <Setter Property="Padding" Value="12,4"/>
+      <Setter Property="FontSize" Value="14"/>
+      <Setter Property="Foreground" Value="{StaticResource TextMuted}"/>
+    </Style>
+
+    <!-- An EMPTY input has to look like something you can type in. At 9% black with a 15%-white
+         hairline it read as an inert slab rather than a field, and next to a genuinely disabled
+         button (which renders at 0.35 opacity) it was easy to take for one. A deeper well and a
+         brighter outline is the whole fix; the focused state still switches to the accent. -->
+    <Style x:Key="GlassInput" TargetType="TextBox">
+      <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+      <Setter Property="CaretBrush" Value="{StaticResource Accent}"/>
+      <Setter Property="Background" Value="#2E000000"/>
+      <Setter Property="BorderBrush" Value="{StaticResource GlassStrokeHi}"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="Padding" Value="10,7"/>
+      <Setter Property="FontSize" Value="13"/>
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="TextBox">
+            <Border x:Name="bd" CornerRadius="9" Background="{TemplateBinding Background}"
+                    BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}">
+              <ScrollViewer x:Name="PART_ContentHost" Margin="{TemplateBinding Padding}"/>
+            </Border>
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsKeyboardFocused" Value="True">
+                <Setter TargetName="bd" Property="BorderBrush" Value="{StaticResource Accent}"/>
+              </Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+
+    <!-- Kept in step with GlassInput; a password field that looked different from a text field
+         would read as the disabled one of the pair. -->
+    <Style x:Key="GlassPassword" TargetType="PasswordBox">
+      <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+      <Setter Property="CaretBrush" Value="{StaticResource Accent}"/>
+      <Setter Property="Background" Value="#2E000000"/>
+      <Setter Property="BorderBrush" Value="{StaticResource GlassStrokeHi}"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="Padding" Value="10,8"/>
+      <Setter Property="FontSize" Value="14"/>
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="PasswordBox">
+            <Border x:Name="bd" CornerRadius="9" Background="{TemplateBinding Background}"
+                    BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}">
+              <ScrollViewer x:Name="PART_ContentHost" Margin="{TemplateBinding Padding}"/>
+            </Border>
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsKeyboardFocused" Value="True">
+                <Setter TargetName="bd" Property="BorderBrush" Value="{StaticResource Accent}"/>
+              </Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+
+    <Style x:Key="SideItem" TargetType="ListBoxItem">
+      <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+      <Setter Property="Padding" Value="12,9"/>
+      <Setter Property="Margin" Value="0,2"/>
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="ListBoxItem">
+            <Border x:Name="bd" CornerRadius="9" Background="Transparent" Padding="{TemplateBinding Padding}">
+              <ContentPresenter/>
+            </Border>
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="bd" Property="Background" Value="{StaticResource GlassFill}"/>
+              </Trigger>
+              <Trigger Property="IsSelected" Value="True">
+                <Setter TargetName="bd" Property="Background" Value="{StaticResource AccentSoft}"/>
+              </Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+
+    <Style x:Key="GlassGrid" TargetType="DataGrid">
+      <Setter Property="Background" Value="Transparent"/>
+      <Setter Property="BorderThickness" Value="0"/>
+      <Setter Property="RowBackground" Value="#0AFFFFFF"/>
+      <Setter Property="AlternatingRowBackground" Value="#04FFFFFF"/>
+      <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+      <Setter Property="GridLinesVisibility" Value="Horizontal"/>
+      <Setter Property="HorizontalGridLinesBrush" Value="#12FFFFFF"/>
+      <Setter Property="RowHeight" Value="34"/>
+      <Setter Property="HeadersVisibility" Value="Column"/>
+      <Setter Property="IsReadOnly" Value="True"/>
+      <Setter Property="SelectionMode" Value="Single"/>
+      <Setter Property="AutoGenerateColumns" Value="True"/>
+      <Setter Property="CanUserAddRows" Value="False"/>
+      <Setter Property="ColumnHeaderStyle">
+        <Setter.Value>
+          <Style TargetType="DataGridColumnHeader">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{StaticResource TextMuted}"/>
+            <Setter Property="FontSize" Value="11.5"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Padding" Value="10,8"/>
+            <Setter Property="BorderBrush" Value="{StaticResource GlassStroke}"/>
+            <Setter Property="BorderThickness" Value="0,0,0,1"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+          </Style>
+        </Setter.Value>
+      </Setter>
+      <Setter Property="CellStyle">
+        <Setter.Value>
+          <Style TargetType="DataGridCell">
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="10,0"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+            <Setter Property="Template">
+              <Setter.Value>
+                <ControlTemplate TargetType="DataGridCell">
+                  <Border Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}"
+                          VerticalAlignment="Stretch">
+                    <ContentPresenter VerticalAlignment="Center"/>
+                  </Border>
+                </ControlTemplate>
+              </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+              <Trigger Property="IsSelected" Value="True">
+                <Setter Property="Background" Value="{StaticResource AccentSoft}"/>
+              </Trigger>
+            </Style.Triggers>
+          </Style>
+        </Setter.Value>
+      </Setter>
+    </Style>
+
+    <!-- A segmented BUTTON, not a pill.
+         It used to be CornerRadius 999 with a fully transparent unselected state, so the
+         unselected options read as bare text and the selected one as an oval floating over
+         them. Now every option is a button at all times (same 9px radius, padding and border
+         as GhostButton) and selection is carried by COLOUR: unselected is the ghost treatment,
+         selected is the accent treatment, which is the same pairing the rest of the window
+         already uses for "normal" versus "the one that matters".
+
+         NOTE: a double hyphen is ILLEGAL inside an XML comment, so the em-dash asides used
+         everywhere else in this repo have to be written with brackets in .xaml files. -->
+    <!-- The same treatment for a MULTI-select. A RadioButton cannot be unchecked by clicking it,
+         so a parameter that genuinely takes several values (a [string[]] with a ValidateSet, like
+         -Section) needs a ToggleButton or the GUI can only ever reach one of them. -->
+    <Style x:Key="TogglePill" TargetType="ToggleButton">
+      <Setter Property="Foreground" Value="{StaticResource TextMuted}"/>
+      <Setter Property="Cursor" Value="Hand"/>
+      <Setter Property="FontSize" Value="12.5"/>
+      <Setter Property="SnapsToDevicePixels" Value="True"/>
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="ToggleButton">
+            <Border x:Name="bd" CornerRadius="9" Padding="14,7" Margin="0,0,6,6"
+                    Background="{StaticResource GlassFill}"
+                    BorderBrush="{StaticResource GlassStroke}" BorderThickness="1">
+              <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            </Border>
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="bd" Property="Background" Value="{StaticResource GlassFillHi}"/>
+                <Setter TargetName="bd" Property="BorderBrush" Value="{StaticResource GlassStrokeHi}"/>
+                <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+              </Trigger>
+              <Trigger Property="IsChecked" Value="True">
+                <Setter TargetName="bd" Property="Background" Value="{StaticResource AccentSoft}"/>
+                <Setter TargetName="bd" Property="BorderBrush" Value="{StaticResource Accent}"/>
+                <Setter Property="Foreground" Value="#DFF3FF"/>
+                <Setter Property="FontWeight" Value="SemiBold"/>
+              </Trigger>
+              <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Opacity" Value="0.35"/>
+              </Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+
+    <Style x:Key="TabPill" TargetType="RadioButton">
+      <Setter Property="Foreground" Value="{StaticResource TextMuted}"/>
+      <Setter Property="Cursor" Value="Hand"/>
+      <Setter Property="FontSize" Value="12.5"/>
+      <Setter Property="SnapsToDevicePixels" Value="True"/>
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="RadioButton">
+            <Border x:Name="bd" CornerRadius="9" Padding="14,7" Margin="0,0,6,0"
+                    Background="{StaticResource GlassFill}"
+                    BorderBrush="{StaticResource GlassStroke}" BorderThickness="1">
+              <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            </Border>
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="bd" Property="Background" Value="{StaticResource GlassFillHi}"/>
+                <Setter TargetName="bd" Property="BorderBrush" Value="{StaticResource GlassStrokeHi}"/>
+                <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+              </Trigger>
+              <!-- LAST, so it wins over hover: the checked option must not lose its highlight
+                   just because the pointer is somewhere else in the group. -->
+              <Trigger Property="IsChecked" Value="True">
+                <Setter TargetName="bd" Property="Background" Value="{StaticResource AccentSoft}"/>
+                <Setter TargetName="bd" Property="BorderBrush" Value="{StaticResource Accent}"/>
+                <Setter Property="Foreground" Value="#DFF3FF"/>
+                <Setter Property="FontWeight" Value="SemiBold"/>
+              </Trigger>
+              <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Opacity" Value="0.35"/>
+              </Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+  </Window.Resources>
+
+  <!-- Named so the corners can be squared off when maximised. Rounded corners against the screen
+       edges leave four notches of desktop showing through, which reads as a broken window. -->
+  <Border x:Name="RootBorder" CornerRadius="14" Background="{StaticResource WindowGround}"
+          BorderBrush="{StaticResource GlassStrokeHi}" BorderThickness="1">
+    <Grid>
+      <!-- the two colour washes that make the translucency legible -->
+      <Rectangle Fill="{StaticResource Bloom}"  IsHitTestVisible="False"/>
+      <Rectangle Fill="{StaticResource Bloom2}" IsHitTestVisible="False"/>
+
+      <Grid Margin="0">
+        <Grid.RowDefinitions>
+          <RowDefinition Height="46"/>
+          <RowDefinition Height="*"/>
+          <RowDefinition Height="30"/>
+        </Grid.RowDefinitions>
+
+        <!-- ================= title bar ================= -->
+        <Grid x:Name="TitleBar" Grid.Row="0" Background="Transparent">
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="Auto"/>
+          </Grid.ColumnDefinitions>
+          <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="18,0,0,0">
+            <Ellipse Width="9" Height="9" Fill="{StaticResource Accent}" Margin="0,0,10,0"/>
+            <TextBlock Text="ADAdmin" Foreground="{StaticResource TextPrimary}" FontSize="13.5" FontWeight="SemiBold"/>
+            <TextBlock Text="multi-forest directory administration" Foreground="{StaticResource TextFaint}"
+                       FontSize="11.5" Margin="12,1,0,0" VerticalAlignment="Center"/>
+          </StackPanel>
+          <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+            <Border x:Name="ProviderChip" Style="{StaticResource Chip}" Margin="0,0,10,0">
+              <TextBlock x:Name="ProviderText" Text="provider: —" Foreground="{StaticResource TextMuted}" FontSize="11"/>
+            </Border>
+            <Border x:Name="AdminChip" Style="{StaticResource Chip}" Margin="0,0,10,0">
+              <TextBlock x:Name="AdminText" Text="locked" Foreground="{StaticResource TextMuted}" FontSize="11"/>
+            </Border>
+            <!-- Turns red and stays red while there are unread problems. An error log nobody
+                 notices is the same as no error log. -->
+            <Border x:Name="ErrorChip" Style="{StaticResource Chip}" Margin="0,0,14,0"
+                    Background="#33FB7185" BorderBrush="#66FB7185" Visibility="Collapsed" Cursor="Hand">
+              <TextBlock x:Name="ErrorCountText" Text="0 problems" Foreground="{StaticResource Danger}" FontSize="11"/>
+            </Border>
+          </StackPanel>
+          <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,8,0">
+            <!-- Shown only when the window is NOT already elevated. -->
+            <Button x:Name="BtnElevate" AutomationProperties.Name="Restart as administrator" Style="{StaticResource WindowButton}" Content="&#x1F6E1;"
+                    ToolTip="Restart this window as administrator" Visibility="Collapsed"/>
+            <Button x:Name="BtnMinimize" AutomationProperties.Name="Minimise" Style="{StaticResource WindowButton}" Content="&#x2014;" ToolTip="Minimise"/>
+            <!-- The glyph is set from code so it can flip to a restore symbol; the content here
+                 is only what shows before the window has loaded. -->
+            <Button x:Name="BtnMaximize" AutomationProperties.Name="Maximise" Style="{StaticResource WindowButton}" Content="&#x25A1;" ToolTip="Maximise"/>
+            <Button x:Name="BtnClose" AutomationProperties.Name="Close" Style="{StaticResource WindowButton}" Content="&#x2715;" ToolTip="Close"/>
+          </StackPanel>
+        </Grid>
+
+        <!-- ================= main ================= -->
+        <Grid x:Name="MainContent" Grid.Row="1" Margin="14,0,14,10" Visibility="Collapsed">
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="248"/>
+            <ColumnDefinition Width="*"/>
+          </Grid.ColumnDefinitions>
+
+          <!-- sidebar: the registered forests -->
+          <Border Grid.Column="0" Style="{StaticResource GlassPanel}" Margin="0,0,12,0">
+            <Grid>
+              <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+              </Grid.RowDefinitions>
+              <StackPanel Grid.Row="0" Margin="16,14,16,8">
+                <TextBlock Text="DOMAINS" Foreground="{StaticResource TextFaint}" FontSize="10.5"
+                           FontWeight="SemiBold"/>
+                <TextBlock x:Name="DomainCount" Text="—" Foreground="{StaticResource TextMuted}" FontSize="11" Margin="0,3,0,0"/>
+              </StackPanel>
+              <ListBox x:Name="DomainList" AutomationProperties.Name="Domains" Grid.Row="1" Background="Transparent" BorderThickness="0"
+                       Margin="8,0,8,8" ItemContainerStyle="{StaticResource SideItem}"
+                       ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                <ListBox.ItemTemplate>
+                  <DataTemplate>
+                    <StackPanel>
+                      <TextBlock Text="{Binding Name}" FontSize="13" FontWeight="SemiBold"
+                                 Foreground="{StaticResource TextPrimary}"/>
+                      <TextBlock Text="{Binding DnsDomain}" FontSize="11" Foreground="{StaticResource TextMuted}"/>
+                      <TextBlock Text="{Binding TierSummary}" FontSize="10.5" Foreground="{StaticResource TextFaint}"
+                                 Margin="0,2,0,0"/>
+                    </StackPanel>
+                  </DataTemplate>
+                </ListBox.ItemTemplate>
+              </ListBox>
+              <StackPanel Grid.Row="2" Margin="12,0,12,12">
+                <!-- Accent, and first: with an empty store this is the only thing that can be
+                     done, and a sidebar that lists nothing with no way to add anything is a
+                     dead end. Edit is disabled until a domain is selected. -->
+                <Button x:Name="BtnAddDomain"  Style="{StaticResource AccentButton}" Content="Add domain" Margin="0,0,0,6"/>
+                <Button x:Name="BtnEditDomain" Style="{StaticResource GhostButton}" Content="Edit / credentials" Margin="0,0,0,6" IsEnabled="False"/>
+                <!-- Profiles only, never credentials. Carrying the forest list to a new version of
+                     the app should not mean carrying secrets in a file. -->
+                <Grid Margin="0,0,0,6">
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                  </Grid.ColumnDefinitions>
+                  <Button x:Name="BtnExportDomains" Grid.Column="0" Style="{StaticResource GhostButton}"
+                          Content="Export" Margin="0,0,3,0" ToolTip="Save the domain list to a file. No credentials are included."/>
+                  <Button x:Name="BtnImportDomains" Grid.Column="1" Style="{StaticResource GhostButton}"
+                          Content="Import" Margin="3,0,0,0" ToolTip="Load a domain list. Domains you already have are left alone."/>
+                </Grid>
+                <Button x:Name="BtnTest" Style="{StaticResource GhostButton}" Content="Test binding" Margin="0,0,0,6"/>
+                <TextBlock Text="DIRECTORY" Foreground="{StaticResource TextFaint}" FontSize="10.5"
+                           FontWeight="SemiBold" Margin="0,10,0,6"/>
+                <Button x:Name="BtnBrowse"  Style="{StaticResource GhostButton}" Content="Browse OUs" Margin="0,0,0,6"/>
+                <Button x:Name="BtnForest"  Style="{StaticResource GhostButton}" Content="Forest" Margin="0,0,0,6"/>
+                <Button x:Name="BtnBulk"    Style="{StaticResource GhostButton}" Content="Bulk import" Margin="0,0,0,6"/>
+                <Button x:Name="BtnBin"     Style="{StaticResource GhostButton}" Content="Deleted objects" Margin="0,0,0,6"/>
+                <Button x:Name="BtnScripts" Style="{StaticResource GhostButton}" Content="Scripts" Margin="0,0,0,6"/>
+                <TextBlock Text="SESSION" Foreground="{StaticResource TextFaint}" FontSize="10.5"
+                           FontWeight="SemiBold" Margin="0,10,0,6"/>
+                <Button x:Name="BtnLog"  Style="{StaticResource GhostButton}" Content="Error log" Margin="0,0,0,6"/>
+                <Button x:Name="BtnLock" Style="{StaticResource DangerButton}" Content="Lock store"/>
+              </StackPanel>
+            </Grid>
+          </Border>
+
+          <!-- content -->
+          <Grid Grid.Column="1">
+            <Grid.RowDefinitions>
+              <RowDefinition Height="Auto"/>
+              <RowDefinition Height="*"/>
+              <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- search + target -->
+            <Border Grid.Row="0" Style="{StaticResource GlassPanel}" Padding="14" Margin="0,0,0,12">
+              <Grid>
+                <Grid.RowDefinitions>
+                  <RowDefinition Height="Auto"/>
+                  <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Grid Grid.Row="0">
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                  </Grid.ColumnDefinitions>
+                  <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                    <TextBlock Text="TARGET" Foreground="{StaticResource TextFaint}" FontSize="10.5" FontWeight="SemiBold" Margin="2,0,0,5"/>
+                    <TextBox x:Name="TargetBox" AutomationProperties.Name="Target" Style="{StaticResource GlassInput}"
+                             ToolTip="Hostname, FQDN, UPN or NetBIOS name. The domain is worked out from this."/>
+                  </StackPanel>
+                  <StackPanel Grid.Column="1" Margin="0,0,10,0">
+                    <TextBlock Text="SEARCH" Foreground="{StaticResource TextFaint}" FontSize="10.5" FontWeight="SemiBold" Margin="2,0,0,5"/>
+                    <TextBox x:Name="SearchBox" AutomationProperties.Name="Search" Style="{StaticResource GlassInput}"
+                             ToolTip="Partial name, sAMAccountName or UPN. Empty lists everything."/>
+                  </StackPanel>
+                  <StackPanel Grid.Column="2" VerticalAlignment="Bottom">
+                    <Button x:Name="BtnSearch" Style="{StaticResource AccentButton}" Content="Search" MinWidth="96"/>
+                  </StackPanel>
+                </Grid>
+                <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,12,0,0">
+                  <RadioButton x:Name="TabUsers" Style="{StaticResource TabPill}" Content="Users" IsChecked="True" GroupName="kind"/>
+                  <RadioButton x:Name="TabGroups" Style="{StaticResource TabPill}" Content="Groups" GroupName="kind"/>
+                  <RadioButton x:Name="TabComputers" Style="{StaticResource TabPill}" Content="Computers" GroupName="kind"/>
+                  <Border Style="{StaticResource Chip}" Margin="14,0,0,0" VerticalAlignment="Center">
+                    <TextBlock x:Name="ResolveText" Text="no target resolved" FontSize="11"
+                               Foreground="{StaticResource TextMuted}"/>
+                  </Border>
+                </StackPanel>
+              </Grid>
+            </Border>
+
+            <!-- results
+                 Named so the log and script panels can HIDE it. All three share this cell, and
+                 GlassPanel is only 8% white, so leaving this visible underneath meant the
+                 DataGrid's column-header rule showed straight through the panel on top of it as
+                 a line across the buttons. Stacking translucent panels reads as a rendering
+                 fault, which is exactly what it was. -->
+            <Border x:Name="ResultPanel" Grid.Row="1" Style="{StaticResource GlassPanel}" Padding="6">
+              <Grid>
+                <Grid.RowDefinitions>
+                  <RowDefinition Height="Auto"/>
+                  <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <!-- A caveat has to outlive the status bar when the data it qualifies does.
+                     "the first 20000 users only" in the status line is gone the moment anything
+                     else is clicked, while the partial grid stays on screen looking complete.
+                     Collapsed by default, so it costs no height on the normal path. -->
+                <TextBlock x:Name="ResultTruncText" Grid.Row="0" Visibility="Collapsed"
+                           Text="" TextWrapping="Wrap" Margin="4,2,4,6" FontSize="12"
+                           Foreground="{StaticResource Danger}"/>
+                <DataGrid x:Name="ResultGrid" AutomationProperties.Name="Results" Grid.Row="1" Style="{StaticResource GlassGrid}"/>
+                <TextBlock x:Name="EmptyText" Grid.Row="1" Text="Pick a domain, then Search."
+                           Foreground="{StaticResource TextFaint}" FontSize="12.5"
+                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+              </Grid>
+            </Border>
+
+            <!-- ============ error log ============
+                 Sits in the same cell as the results and swaps with them. Written for someone
+                 who does not script: what happened, why, and what to try, in that order and in
+                 words. The raw codes are last, for whoever wants them. -->
+            <Border x:Name="LogPanel" Grid.Row="1" Style="{StaticResource GlassPanel}"
+                    Padding="0" Visibility="Collapsed">
+              <Grid>
+                <Grid.RowDefinitions>
+                  <RowDefinition Height="Auto"/>
+                  <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <Grid Grid.Row="0" Margin="14,12,14,10">
+                  <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="Error log" Foreground="{StaticResource TextPrimary}"
+                               FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                    <TextBlock x:Name="LogRetentionText" Text="kept 7 days" Foreground="{StaticResource TextFaint}"
+                               FontSize="11" Margin="10,2,0,0" VerticalAlignment="Center"/>
+                  </StackPanel>
+                  <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <RadioButton x:Name="LogTabProblems" Style="{StaticResource TabPill}" Content="Problems"
+                                 IsChecked="True" GroupName="logkind"/>
+                    <RadioButton x:Name="LogTabAll"      Style="{StaticResource TabPill}" Content="Everything" GroupName="logkind"/>
+                    <RadioButton x:Name="LogTabWindows"  Style="{StaticResource TabPill}" Content="Windows events" GroupName="logkind"/>
+                    <RadioButton x:Name="LogTabScan"     Style="{StaticResource TabPill}" Content="System scan" GroupName="logkind"/>
+                    <Button x:Name="BtnLogFix" Style="{StaticResource AccentButton}" Content="Fix this"
+                            Margin="8,0,0,0" Visibility="Collapsed"/>
+                    <!-- Marks reviewed rather than deleting: the entry keeps its place in the file
+                         and still shows under Everything, it just stops counting as something
+                         needing attention. -->
+                    <Button x:Name="BtnLogClear"    Style="{StaticResource GhostButton}" Content="Clear" Margin="8,0,0,0" IsEnabled="False"
+                            ToolTip="Mark this one reviewed so it leaves the Problems list"/>
+                    <Button x:Name="BtnLogClearAll" Style="{StaticResource GhostButton}" Content="Clear all" Margin="6,0,0,0"
+                            ToolTip="Mark every problem reviewed"/>
+                    <Button x:Name="BtnLogExport" Style="{StaticResource GhostButton}" Content="Save report" Margin="6,0,0,0"/>
+                    <Button x:Name="BtnLogClose"  Style="{StaticResource GhostButton}" Content="Close" Margin="6,0,0,0"/>
+                  </StackPanel>
+                </Grid>
+
+                <Grid Grid.Row="1" Margin="8,0,8,8">
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="330"/>
+                    <ColumnDefinition Width="*"/>
+                  </Grid.ColumnDefinitions>
+
+                  <ListBox x:Name="LogList" AutomationProperties.Name="Error log entries" Grid.Column="0" Background="Transparent" BorderThickness="0"
+                           ItemContainerStyle="{StaticResource SideItem}"
+                           ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                    <ListBox.ItemTemplate>
+                      <DataTemplate>
+                        <StackPanel>
+                          <StackPanel Orientation="Horizontal">
+                            <Ellipse Width="7" Height="7" Margin="0,0,7,0" VerticalAlignment="Center"
+                                     Fill="{Binding Dot}"/>
+                            <TextBlock Text="{Binding When}" FontSize="10.5" Foreground="{StaticResource TextFaint}"/>
+                          </StackPanel>
+                          <TextBlock Text="{Binding Headline}" FontSize="12.5" TextWrapping="Wrap"
+                                     Foreground="{StaticResource TextPrimary}" Margin="14,2,0,0"/>
+                        </StackPanel>
+                      </DataTemplate>
+                    </ListBox.ItemTemplate>
+                  </ListBox>
+
+                  <Border Grid.Column="1" Background="#10000000" CornerRadius="10" Margin="8,0,0,0">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="18,16">
+                      <StackPanel>
+                        <TextBlock x:Name="LogDetailTitle" Text="Select an entry on the left."
+                                   FontSize="15" FontWeight="SemiBold" TextWrapping="Wrap"
+                                   Foreground="{StaticResource TextPrimary}"/>
+                        <TextBlock x:Name="LogDetailMeta" Text="" FontSize="11" TextWrapping="Wrap"
+                                   Foreground="{StaticResource TextFaint}" Margin="0,6,0,0"/>
+
+                        <TextBlock x:Name="LogWhyLabel" Text="WHY THIS HAPPENED" FontSize="10.5" FontWeight="SemiBold"
+                                   Foreground="{StaticResource TextFaint}" Margin="0,20,0,6" Visibility="Collapsed"/>
+                        <TextBlock x:Name="LogDetailWhy" Text="" FontSize="13" TextWrapping="Wrap"
+                                   Foreground="{StaticResource TextPrimary}" LineHeight="20"/>
+
+                        <TextBlock x:Name="LogFixLabel" Text="WHAT TO TRY" FontSize="10.5" FontWeight="SemiBold"
+                                   Foreground="{StaticResource TextFaint}" Margin="0,20,0,6" Visibility="Collapsed"/>
+                        <ItemsControl x:Name="LogDetailFix" AutomationProperties.Name="Suggested fix">
+                          <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                              <Border Background="#14FFFFFF" CornerRadius="8" Padding="12,9" Margin="0,0,0,6">
+                                <TextBlock Text="{Binding}" FontSize="12.5" TextWrapping="Wrap"
+                                           Foreground="{StaticResource TextPrimary}"/>
+                              </Border>
+                            </DataTemplate>
+                          </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <TextBlock x:Name="LogTechLabel" Text="TECHNICAL DETAIL" FontSize="10.5" FontWeight="SemiBold"
+                                   Foreground="{StaticResource TextFaint}" Margin="0,20,0,6" Visibility="Collapsed"/>
+                        <Border Background="#18000000" CornerRadius="8" Padding="12,10">
+                          <TextBlock x:Name="LogDetailTech" Text="" FontSize="11.5" TextWrapping="Wrap"
+                                     FontFamily="Consolas, Courier New, monospace"
+                                     Foreground="{StaticResource TextMuted}"/>
+                        </Border>
+                      </StackPanel>
+                    </ScrollViewer>
+                  </Border>
+                </Grid>
+              </Grid>
+            </Border>
+
+            <!-- ============ the directory tree ============
+                 Navigation, as distinct from search. Search answers "where is jsmith"; this
+                 answers "what is in this OU", which is how anyone reasons about delegation,
+                 group policy and where a new account should go. Built from one call: every OU
+                 carries its own DN and its parent's, which is the whole hierarchy. -->
+            <Border x:Name="TreePanel" Grid.Row="1" Style="{StaticResource GlassPanel}"
+                    Padding="0" Visibility="Collapsed">
+              <Grid>
+                <Grid.RowDefinitions>
+                  <RowDefinition Height="Auto"/>
+                  <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <Grid Grid.Row="0" Margin="14,12,14,10">
+                  <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="Directory" Foreground="{StaticResource TextPrimary}"
+                               FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                    <TextBlock x:Name="TreeCountText" Text="" Foreground="{StaticResource TextFaint}"
+                               FontSize="11" Margin="10,2,0,0" VerticalAlignment="Center"/>
+                  </StackPanel>
+                  <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <RadioButton x:Name="TreeKindUsers"     Style="{StaticResource TabPill}" Content="Users" IsChecked="True" GroupName="treekind"/>
+                    <RadioButton x:Name="TreeKindGroups"    Style="{StaticResource TabPill}" Content="Groups" GroupName="treekind"/>
+                    <RadioButton x:Name="TreeKindComputers" Style="{StaticResource TabPill}" Content="Computers" GroupName="treekind"/>
+                    <RadioButton x:Name="TreeViewStandard" Style="{StaticResource TabPill}" Content="Standard" IsChecked="True" GroupName="treeview" Margin="18,0,0,0"
+                                 ToolTip="OUs and the containers you administer"/>
+                    <RadioButton x:Name="TreeViewAdvanced" Style="{StaticResource TabPill}" Content="Advanced" GroupName="treeview"
+                                 ToolTip="Everything, including the directory's own plumbing under CN=System"/>
+                    <Button x:Name="BtnOuNew"     Style="{StaticResource GhostButton}"  Content="New OU" Margin="18,0,0,0" IsEnabled="False"
+                            ToolTip="Create an organisational unit inside the selected one"/>
+                    <Button x:Name="BtnOuProtect" Style="{StaticResource GhostButton}"  Content="Protect" Margin="6,0,0,0" IsEnabled="False"
+                            ToolTip="Protect this OU from accidental deletion, or remove that protection"/>
+                    <Button x:Name="BtnOuDelete"  Style="{StaticResource DangerButton}" Content="Delete OU" Margin="6,0,0,0" IsEnabled="False"/>
+                    <Button x:Name="BtnTreeRefresh" Style="{StaticResource GhostButton}" Content="Refresh" Margin="8,0,0,0"/>
+                    <Button x:Name="BtnTreeClose"   Style="{StaticResource GhostButton}" Content="Close" Margin="6,0,0,0"/>
+                  </StackPanel>
+                </Grid>
+                <Grid Grid.Row="1" Margin="8,0,8,8">
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="330"/>
+                    <ColumnDefinition Width="*"/>
+                  </Grid.ColumnDefinitions>
+                  <TreeView x:Name="OuTree" AutomationProperties.Name="Organisational units" Grid.Column="0" Background="Transparent" BorderThickness="0"
+                            Foreground="{StaticResource TextPrimary}"/>
+                  <Grid Grid.Column="1" Margin="12,0,4,0">
+                    <Grid.RowDefinitions>
+                      <RowDefinition Height="Auto"/>
+                      <RowDefinition Height="*"/>
+                      <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <StackPanel Grid.Row="0">
+                      <TextBlock x:Name="TreeSelTitle" Text="Pick a container on the left"
+                                 Foreground="{StaticResource TextPrimary}" FontSize="15" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                      <TextBlock x:Name="TreeSelMeta" Text="" Foreground="{StaticResource TextFaint}"
+                                 FontSize="11" Margin="0,4,0,8" TextWrapping="Wrap"/>
+                    </StackPanel>
+                    <DataGrid x:Name="TreeGrid" AutomationProperties.Name="Container contents" Grid.Row="1" Style="{StaticResource GlassGrid}"/>
+                    <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,8,0,0">
+                      <TextBlock Text="Selected object" Foreground="{StaticResource TextFaint}" FontSize="11"
+                                 VerticalAlignment="Center" Margin="2,0,10,0"/>
+                      <Button x:Name="BtnObjMove"   Style="{StaticResource GhostButton}"  Content="Move" Margin="0,0,6,0" IsEnabled="False"
+                              ToolTip="Move to another OU. This changes which Group Policy applies."/>
+                      <Button x:Name="BtnObjRename" Style="{StaticResource GhostButton}"  Content="Rename" Margin="0,0,6,0" IsEnabled="False"/>
+                      <Button x:Name="BtnObjDelete" Style="{StaticResource DangerButton}" Content="Delete" IsEnabled="False"/>
+                    </StackPanel>
+                  </Grid>
+                </Grid>
+              </Grid>
+            </Border>
+
+            <!-- ============ bulk import ============
+                 The plan first, always. -WhatIf returns one row per input row with what WOULD
+                 happen, so the whole file can be reviewed, rows deselected, and only the rest
+                 applied. Nothing is written until Apply. -->
+            <Border x:Name="BulkPanel" Grid.Row="1" Style="{StaticResource GlassPanel}"
+                    Padding="0" Visibility="Collapsed">
+              <Grid>
+                <Grid.RowDefinitions>
+                  <RowDefinition Height="Auto"/>
+                  <RowDefinition Height="*"/>
+                  <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Grid Grid.Row="0" Margin="14,12,14,10">
+                  <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="Bulk import" Foreground="{StaticResource TextPrimary}"
+                               FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                    <TextBlock x:Name="BulkFileText" Text="no file chosen" Foreground="{StaticResource TextFaint}"
+                               FontSize="11" Margin="12,2,0,0" VerticalAlignment="Center"/>
+                  </StackPanel>
+                  <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <RadioButton x:Name="BulkModeBoth"   Style="{StaticResource TabPill}" Content="Create or update" IsChecked="True" GroupName="bulkmode"/>
+                    <RadioButton x:Name="BulkModeCreate" Style="{StaticResource TabPill}" Content="Create only" GroupName="bulkmode"/>
+                    <RadioButton x:Name="BulkModeUpdate" Style="{StaticResource TabPill}" Content="Update only" GroupName="bulkmode"/>
+                    <Button x:Name="BtnBulkPick"  Style="{StaticResource GhostButton}"  Content="Choose CSV" Margin="8,0,0,0"/>
+                    <Button x:Name="BtnBulkApply" Style="{StaticResource DangerButton}" Content="Apply" Margin="6,0,0,0" IsEnabled="False"/>
+                    <Button x:Name="BtnBulkClose" Style="{StaticResource GhostButton}"  Content="Close" Margin="6,0,0,0"/>
+                  </StackPanel>
+                </Grid>
+                <DataGrid x:Name="BulkGrid" AutomationProperties.Name="Bulk import rows" Grid.Row="1" Style="{StaticResource GlassGrid}" Margin="8,0,8,0"/>
+                <Border Grid.Row="2" Background="#22000000" CornerRadius="9" Padding="10" Margin="8,8,8,8">
+                  <TextBlock x:Name="BulkNotes" Text="Choose a CSV. Nothing is written until you press Apply, and the plan below is what would happen."
+                             Foreground="{StaticResource TextMuted}" FontSize="11.5" TextWrapping="Wrap"/>
+                </Border>
+              </Grid>
+            </Border>
+
+            <!-- ============ the shape of the forest ============
+                 Four read-only views that answer questions nobody asks until something is wrong,
+                 which is exactly why they are worth a click rather than a script. Each carries
+                 the finding that makes it worth looking at, not just the rows. -->
+            <Border x:Name="ForestPanel" Grid.Row="1" Style="{StaticResource GlassPanel}"
+                    Padding="0" Visibility="Collapsed">
+              <Grid>
+                <Grid.RowDefinitions>
+                  <RowDefinition Height="Auto"/>
+                  <RowDefinition Height="*"/>
+                  <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Grid Grid.Row="0" Margin="14,12,14,10">
+                  <TextBlock Text="Forest" Foreground="{StaticResource TextPrimary}"
+                             FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                  <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <RadioButton x:Name="ForestTabTrusts" Style="{StaticResource TabPill}" Content="Trusts" IsChecked="True" GroupName="forest"/>
+                    <RadioButton x:Name="ForestTabSites"  Style="{StaticResource TabPill}" Content="Sites" GroupName="forest"/>
+                    <RadioButton x:Name="ForestTabGpo"    Style="{StaticResource TabPill}" Content="Group Policy" GroupName="forest"/>
+                    <RadioButton x:Name="ForestTabPso"    Style="{StaticResource TabPill}" Content="Password policies" GroupName="forest"/>
+                    <Button x:Name="BtnForestClose" Style="{StaticResource GhostButton}" Content="Close" Margin="8,0,0,0"/>
+                  </StackPanel>
+                </Grid>
+                <DataGrid x:Name="ForestGrid" AutomationProperties.Name="Forests" Grid.Row="1" Style="{StaticResource GlassGrid}" Margin="8,0,8,0"/>
+                <Border Grid.Row="2" Background="#22000000" CornerRadius="9" Padding="10" Margin="8,8,8,8">
+                  <TextBlock x:Name="ForestNotes" Text="" Foreground="{StaticResource TextMuted}"
+                             FontSize="11.5" TextWrapping="Wrap"/>
+                </Border>
+              </Grid>
+            </Border>
+
+            <!-- ============ deleted objects ============
+                 The Recycle Bin, with the thing that decides everything shown BEFORE the click:
+                 whether this forest can restore an object fully, or only as a tombstone. A
+                 tombstone restore returns an object with the right name and SID and NO group
+                 memberships, and it looks restored. -->
+            <Border x:Name="BinPanel" Grid.Row="1" Style="{StaticResource GlassPanel}"
+                    Padding="0" Visibility="Collapsed">
+              <Grid>
+                <Grid.RowDefinitions>
+                  <RowDefinition Height="Auto"/>
+                  <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <Grid Grid.Row="0" Margin="14,12,14,10">
+                  <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="Deleted objects" Foreground="{StaticResource TextPrimary}"
+                               FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                    <Border x:Name="BinStateChip" Style="{StaticResource Chip}" Margin="12,0,0,0" VerticalAlignment="Center">
+                      <TextBlock x:Name="BinStateText" Text="" FontSize="11" Foreground="{StaticResource TextMuted}"/>
+                    </Border>
+                  </StackPanel>
+                  <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button x:Name="BtnBinRestore" Style="{StaticResource AccentButton}" Content="Restore" MinWidth="90" IsEnabled="False"/>
+                    <Button x:Name="BtnBinRefresh" Style="{StaticResource GhostButton}" Content="Refresh" Margin="8,0,0,0"/>
+                    <Button x:Name="BtnBinClose"   Style="{StaticResource GhostButton}" Content="Close" Margin="6,0,0,0"/>
+                  </StackPanel>
+                </Grid>
+                <Grid Grid.Row="1" Margin="8,0,8,8">
+                  <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                  </Grid.RowDefinitions>
+                  <DataGrid x:Name="BinGrid" AutomationProperties.Name="Deleted objects" Grid.Row="0" Style="{StaticResource GlassGrid}"/>
+                  <Border Grid.Row="1" Background="#22000000" CornerRadius="9" Padding="10" Margin="0,8,0,0">
+                    <TextBlock x:Name="BinNotes" Text="Pick a deleted object to see what restoring it will and will not bring back."
+                               Foreground="{StaticResource TextMuted}" FontSize="11.5" TextWrapping="Wrap"/>
+                  </Border>
+                </Grid>
+              </Grid>
+            </Border>
+
+            <!-- ============ scripts ============
+                 Same cell as the results and the log, and swaps with them. Both kinds of script
+                 are listed together because the distinction is an implementation detail to
+                 whoever is trying to get something done: the ones that ship in scripts\ and the
+                 ones brought in with 'adm script import'. The tag on each row says which. -->
+            <Border x:Name="ScriptPanel" Grid.Row="1" Style="{StaticResource GlassPanel}"
+                    Padding="0" Visibility="Collapsed">
+              <Grid>
+                <Grid.RowDefinitions>
+                  <RowDefinition Height="Auto"/>
+                  <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <Grid Grid.Row="0" Margin="14,12,14,10">
+                  <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="Scripts" Foreground="{StaticResource TextPrimary}"
+                               FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                    <TextBlock x:Name="ScriptCountText" Text="" Foreground="{StaticResource TextFaint}"
+                               FontSize="11" Margin="10,2,0,0" VerticalAlignment="Center"/>
+                    <!-- The target belongs where the work is. It used to live only in the bar
+                         above, which reads as a separate tool once this panel is covering the
+                         results. Clicking it focuses that bar. -->
+                    <Border x:Name="ScriptTargetChip" Style="{StaticResource Chip}" Margin="14,0,0,0"
+                            VerticalAlignment="Center" Cursor="Hand"
+                            ToolTip="The forest these scripts act on. Click to change it, or pick a domain on the left.">
+                      <TextBlock x:Name="ScriptTargetText" Text="no target" FontSize="11"
+                                 Foreground="{StaticResource TextMuted}"/>
+                    </Border>
+                  </StackPanel>
+                  <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <!-- Only enabled for scripts that declare SupportsShouldProcess. Offering a
+                         preview that silently does nothing on a script which cannot honour it
+                         would be worse than not offering one. -->
+                    <RadioButton x:Name="ScriptWhatIfOn"  Style="{StaticResource TabPill}" Content="Preview" IsChecked="True" GroupName="scriptrun"/>
+                    <RadioButton x:Name="ScriptWhatIfOff" Style="{StaticResource TabPill}" Content="Apply" GroupName="scriptrun"/>
+                    <Button x:Name="BtnScriptRun"     Style="{StaticResource AccentButton}" Content="Run" MinWidth="90" Margin="6,0,0,0" IsEnabled="False"/>
+                    <Button x:Name="BtnScriptSaveOut" Style="{StaticResource GhostButton}" Content="Save output" Margin="8,0,0,0" IsEnabled="False"/>
+                    <Button x:Name="BtnScriptClose"   Style="{StaticResource GhostButton}" Content="Close" Margin="6,0,0,0"/>
+                  </StackPanel>
+                </Grid>
+
+                <Grid Grid.Row="1" Margin="8,0,8,8">
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="330"/>
+                    <ColumnDefinition Width="*"/>
+                  </Grid.ColumnDefinitions>
+
+                  <ListBox x:Name="ScriptList" AutomationProperties.Name="Scripts" Grid.Column="0" Background="Transparent" BorderThickness="0"
+                           ItemContainerStyle="{StaticResource SideItem}"
+                           ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                    <ListBox.ItemTemplate>
+                      <DataTemplate>
+                        <StackPanel>
+                          <TextBlock Text="{Binding Name}" FontSize="13" FontWeight="SemiBold"
+                                     Foreground="{StaticResource TextPrimary}" TextWrapping="Wrap"/>
+                          <TextBlock Text="{Binding Kind}" FontSize="10.5" Foreground="{StaticResource TextFaint}"
+                                     Margin="0,2,0,0"/>
+                        </StackPanel>
+                      </DataTemplate>
+                    </ListBox.ItemTemplate>
+                  </ListBox>
+
+                  <Grid Grid.Column="1" Margin="12,0,4,0">
+                    <Grid.RowDefinitions>
+                      <RowDefinition Height="Auto"/>
+                      <RowDefinition Height="Auto"/>
+                      <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <StackPanel Grid.Row="0">
+                      <TextBlock x:Name="ScriptTitle" Text="Pick a script" Foreground="{StaticResource TextPrimary}"
+                                 FontSize="15" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                      <TextBlock x:Name="ScriptMeta" Text="" Foreground="{StaticResource TextFaint}"
+                                 FontSize="11" Margin="0,4,0,0" TextWrapping="Wrap"/>
+                      <TextBlock x:Name="ScriptSynopsis" Text="" Foreground="{StaticResource TextMuted}"
+                                 FontSize="12.5" Margin="0,8,0,0" TextWrapping="Wrap"/>
+
+                      <!-- Parameter-set selector. Only shown when a script actually has more
+                           than one, because most do not, and an always-visible row of one
+                           option is furniture. -->
+                      <StackPanel x:Name="ScriptModeRow" Orientation="Horizontal" Margin="0,12,0,0"
+                                  Visibility="Collapsed">
+                        <TextBlock Text="MODE" Foreground="{StaticResource TextFaint}" FontSize="10.5"
+                                   FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                        <ItemsControl x:Name="ScriptModes" AutomationProperties.Name="Script modes">
+                          <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
+                          </ItemsControl.ItemsPanel>
+                        </ItemsControl>
+                      </StackPanel>
+                    </StackPanel>
+
+                    <!-- Generated from the script's own param() block. Capped and scrollable:
+                         Manage-AdUserAccounts has enough parameters to push the output pane off
+                         the bottom of the window otherwise. -->
+                    <!-- 160, not 230: the parameters, the header and the output all share this
+                         column, and a taller cap ate the whole output pane on a 720px window.
+                         The list scrolls, so a cap costs nothing; an invisible output pane costs
+                         the entire point of running something. -->
+                    <Border Grid.Row="1" Margin="0,10,0,0" MaxHeight="160">
+                      <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <StackPanel x:Name="ScriptParams"/>
+                      </ScrollViewer>
+                    </Border>
+
+                    <Grid Grid.Row="2" Margin="0,10,0,4" MinHeight="110">
+                      <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                      </Grid.RowDefinitions>
+                      <TextBlock Grid.Row="0" Text="OUTPUT" Foreground="{StaticResource TextFaint}"
+                                 FontSize="10.5" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                      <Border Grid.Row="1" Background="#22000000" CornerRadius="9" Padding="10">
+                        <!-- Wrapping, and NO horizontal scrollbar. A long warning ran off the
+                             right-hand edge with acres of empty space below it, and the caveats
+                             these scripts emit are exactly the long lines. Horizontal scrolling
+                             must be Disabled rather than Auto: with Auto the ScrollViewer offers
+                             the TextBlock infinite width, so it never wraps however wide the
+                             pane is. -->
+                        <ScrollViewer x:Name="ScriptOutputScroll" VerticalScrollBarVisibility="Auto"
+                                      HorizontalScrollBarVisibility="Disabled">
+                          <TextBlock x:Name="ScriptOutput" Text="Nothing run yet."
+                                     Foreground="{StaticResource TextMuted}" FontSize="11.5"
+                                     TextWrapping="Wrap"
+                                     FontFamily="Consolas, Cascadia Mono, monospace"/>
+                        </ScrollViewer>
+                      </Border>
+                    </Grid>
+                  </Grid>
+                </Grid>
+              </Grid>
+            </Border>
+
+            <!-- actions -->
+            <Border Grid.Row="2" Style="{StaticResource GlassPanel}" Padding="12" Margin="0,12,0,0">
+              <StackPanel Orientation="Horizontal">
+                <TextBlock Text="Selected account" Foreground="{StaticResource TextFaint}" FontSize="11"
+                           VerticalAlignment="Center" Margin="4,0,12,0"/>
+                <Button x:Name="BtnDetails" Style="{StaticResource AccentButton}" Content="Details" Margin="0,0,8,0" IsEnabled="False"
+                        ToolTip="Everything about the selected object. Double-clicking a row does the same."/>
+                <Button x:Name="BtnUnlockUser" Style="{StaticResource GhostButton}" Content="Unlock" Margin="0,0,8,0" IsEnabled="False"/>
+                <Button x:Name="BtnEnable"     Style="{StaticResource GhostButton}" Content="Enable" Margin="0,0,8,0" IsEnabled="False"/>
+                <Button x:Name="BtnDisable"    Style="{StaticResource DangerButton}" Content="Disable" Margin="0,0,8,0" IsEnabled="False"/>
+                <Button x:Name="BtnReset"      Style="{StaticResource DangerButton}" Content="Reset password" IsEnabled="False"/>
+              </StackPanel>
+            </Border>
+          </Grid>
+        </Grid>
+
+        <!-- ================= object detail =================
+             The other half of the daily loop. The results grid answers "which objects match";
+             this answers "what IS this one": decoded flags, the password policy that actually
+             applies, and the EFFECTIVE group membership including nesting. Populated from code
+             rather than bound field by field, because a user, a group and a computer do not have
+             the same interesting fields and a fixed layout would show blanks for two of them.
+             (No double hyphen anywhere in here: it is illegal inside an XML comment and fails
+             the whole window load, which is why a test checks for it.) -->
+        <Grid x:Name="DetailOverlay" Grid.Row="1" Background="{StaticResource DialogVeil}" Visibility="Collapsed">
+          <Border Style="{StaticResource GlassPanel}" Width="760" MaxHeight="620" Padding="0"
+                  HorizontalAlignment="Center" VerticalAlignment="Center"
+                  Background="{StaticResource DialogFill}">
+            <Grid>
+              <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+              </Grid.RowDefinitions>
+
+              <StackPanel Grid.Row="0" Margin="24,20,24,12">
+                <TextBlock x:Name="DetailTitle" Text="" Foreground="{StaticResource TextPrimary}"
+                           FontSize="19" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                <TextBlock x:Name="DetailSubtitle" Text="" Foreground="{StaticResource TextFaint}"
+                           FontSize="11" Margin="0,4,0,0" TextWrapping="Wrap"/>
+                <WrapPanel x:Name="DetailChips" Margin="0,10,0,0"/>
+              </StackPanel>
+
+              <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto"
+                            HorizontalScrollBarVisibility="Disabled" Margin="24,0,18,0">
+                <StackPanel x:Name="DetailBody"/>
+              </ScrollViewer>
+
+              <Grid Grid.Row="2" Margin="24,14,24,18">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                  <Button x:Name="BtnDetailEdit"   Style="{StaticResource GhostButton}"  Content="Edit" Margin="0,0,8,0" IsEnabled="False"
+                          ToolTip="Change this account's directory attributes"/>
+                  <!-- Deliberately a second click. Opening a computer must not fetch its local
+                       administrator password: browsing a list of machines would otherwise put
+                       every one of them on screen. -->
+                  <Button x:Name="BtnDetailSecrets" Style="{StaticResource GhostButton}" Content="Recovery" Margin="0,0,8,0" IsEnabled="False"
+                          ToolTip="Retrieve the LAPS password and BitLocker recovery keys for this machine"/>
+                  <Button x:Name="BtnDetailMembers" Style="{StaticResource GhostButton}" Content="Members" Margin="0,0,8,0" IsEnabled="False"
+                          ToolTip="Add or remove members of this group"/>
+                  <Button x:Name="BtnDetailUnlock" Style="{StaticResource GhostButton}"  Content="Unlock" Margin="0,0,8,0" IsEnabled="False"/>
+                  <Button x:Name="BtnDetailToggle" Style="{StaticResource GhostButton}"  Content="Disable" Margin="0,0,8,0" IsEnabled="False"/>
+                  <Button x:Name="BtnDetailReset"  Style="{StaticResource DangerButton}" Content="Reset password" IsEnabled="False"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                  <Button x:Name="BtnDetailCopy"  Style="{StaticResource GhostButton}" Content="Copy" Margin="0,0,8,0"
+                          ToolTip="Copy this object's details to the clipboard"/>
+                  <Button x:Name="BtnDetailClose" Style="{StaticResource AccentButton}" Content="Close"/>
+                </StackPanel>
+              </Grid>
+            </Grid>
+          </Border>
+        </Grid>
+
+        <!-- ================= edit an account =================
+             Fields are generated from Set-AdmUser's own parameter block, the same way the scripts
+             panel is generated from each script's, so a parameter added to the cmdlet appears
+             here with no change to this window. Only what was CHANGED is sent. -->
+        <Grid x:Name="EditOverlay" Grid.Row="1" Background="{StaticResource DialogVeil}" Visibility="Collapsed">
+          <Border Style="{StaticResource GlassPanel}" Width="700" MaxHeight="600" Padding="0"
+                  HorizontalAlignment="Center" VerticalAlignment="Center"
+                  Background="{StaticResource DialogFill}">
+            <Grid>
+              <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+              </Grid.RowDefinitions>
+              <StackPanel Grid.Row="0" Margin="24,20,24,10">
+                <TextBlock x:Name="EditTitle" Text="" Foreground="{StaticResource TextPrimary}"
+                           FontSize="17" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                <TextBlock Text="Only fields you change are written. Emptying a field CLEARS that attribute in the directory."
+                           Foreground="{StaticResource TextFaint}" FontSize="11" Margin="0,6,0,0" TextWrapping="Wrap"/>
+                <TextBlock x:Name="EditError" Text="" Foreground="{StaticResource Danger}" FontSize="11.5"
+                           Margin="0,8,0,0" TextWrapping="Wrap" Visibility="Collapsed"/>
+              </StackPanel>
+              <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto"
+                            HorizontalScrollBarVisibility="Disabled" Margin="24,0,18,0">
+                <StackPanel x:Name="EditBody"/>
+              </ScrollViewer>
+              <Grid Grid.Row="2" Margin="24,14,24,18">
+                <TextBlock x:Name="EditChangeCount" Text="" Foreground="{StaticResource TextFaint}"
+                           FontSize="11" VerticalAlignment="Center" HorizontalAlignment="Left"/>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                  <Button x:Name="BtnEditPreview" Style="{StaticResource GhostButton}" Content="Preview" Margin="0,0,8,0"
+                          ToolTip="Show what would change, without writing anything"/>
+                  <Button x:Name="BtnEditCancel"  Style="{StaticResource GhostButton}" Content="Cancel" Margin="0,0,8,0"/>
+                  <Button x:Name="BtnEditSave"    Style="{StaticResource AccentButton}" Content="Save"/>
+                </StackPanel>
+              </Grid>
+            </Grid>
+          </Border>
+        </Grid>
+
+        <!-- ================= add / edit a domain =================
+             Declared BEFORE the lock overlay so the lock always renders on top: if the store
+             auto-locks while this is open, the unlock prompt must win rather than leaving an
+             editor sitting over a locked store.
+
+             Registering a forest and giving it a credential are one task, not two, so they are
+             one panel. A domain with no credential cannot answer anything, and making that a
+             separate second trip is how you end up with a sidebar full of forests that do not
+             work. -->
+        <Grid x:Name="DomainOverlay" Grid.Row="1" Background="{StaticResource DialogVeil}" Visibility="Collapsed">
+          <Border Style="{StaticResource GlassPanel}" Width="560" Padding="26"
+                  HorizontalAlignment="Center" VerticalAlignment="Center"
+                  Background="{StaticResource DialogFill}">
+            <StackPanel>
+              <TextBlock x:Name="DomainOverlayTitle" Text="Add a domain" Foreground="{StaticResource TextPrimary}"
+                         FontSize="17" FontWeight="SemiBold"/>
+              <TextBlock Text="The name is yours to choose; everything else is how this forest is reached."
+                         Foreground="{StaticResource TextFaint}" FontSize="11" Margin="0,6,0,0" TextWrapping="Wrap"/>
+
+              <Grid Margin="0,18,0,0">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="*"/>
+                  <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                  <TextBlock Text="NAME" Foreground="{StaticResource TextFaint}" FontSize="10.5" FontWeight="SemiBold" Margin="2,0,0,5"/>
+                  <TextBox x:Name="DomName" AutomationProperties.Name="Name" Style="{StaticResource GlassInput}"
+                           ToolTip="Short label used everywhere in this toolkit, e.g. corp"/>
+                </StackPanel>
+                <StackPanel Grid.Column="1" Margin="8,0,0,0">
+                  <TextBlock Text="DNS DOMAIN" Foreground="{StaticResource TextFaint}" FontSize="10.5" FontWeight="SemiBold" Margin="2,0,0,5"/>
+                  <TextBox x:Name="DomDns" AutomationProperties.Name="DNS domain" Style="{StaticResource GlassInput}"
+                           ToolTip="The forest's FQDN, e.g. corp.example.com"/>
+                </StackPanel>
+              </Grid>
+
+              <Grid Margin="0,12,0,0">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="*"/>
+                  <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                  <TextBlock Text="NETBIOS" Foreground="{StaticResource TextFaint}" FontSize="10.5" FontWeight="SemiBold" Margin="2,0,0,5"/>
+                  <TextBox x:Name="DomNetbios" AutomationProperties.Name="NetBIOS name" Style="{StaticResource GlassInput}" ToolTip="e.g. CORP. Optional."/>
+                </StackPanel>
+                <StackPanel Grid.Column="1" Margin="8,0,0,0">
+                  <TextBlock Text="DOMAIN CONTROLLERS" Foreground="{StaticResource TextFaint}" FontSize="10.5" FontWeight="SemiBold" Margin="2,0,0,5"/>
+                  <TextBox x:Name="DomDcs" AutomationProperties.Name="Domain controllers" Style="{StaticResource GlassInput}"
+                           ToolTip="FQDN or IP, comma separated. Pin these when the forest's DNS is not reachable from here."/>
+                </StackPanel>
+              </Grid>
+
+              <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
+                <TextBlock Text="CONNECT WITH" Foreground="{StaticResource TextFaint}" FontSize="10.5"
+                           FontWeight="SemiBold" VerticalAlignment="Center" Margin="2,0,10,0"/>
+                <RadioButton x:Name="DomSslOn"  Style="{StaticResource TabPill}" Content="LDAPS 636" IsChecked="True" GroupName="domssl"/>
+                <RadioButton x:Name="DomSslOff" Style="{StaticResource TabPill}" Content="LDAP 389 (signed)" GroupName="domssl"/>
+              </StackPanel>
+              <TextBlock Text="LDAPS is the default and the right answer. Use 389 when the DC has no certificate that matches how you reach it — pinning a DC by IP is the usual cause, since a certificate cannot match an address. The connection is still signed and sealed."
+                         Foreground="{StaticResource TextFaint}" FontSize="10.5" Margin="2,6,0,0" TextWrapping="Wrap"/>
+
+              <Border Height="1" Background="#22FFFFFF" Margin="0,18,0,0"/>
+
+              <TextBlock Text="CREDENTIAL" Foreground="{StaticResource TextFaint}" FontSize="10.5"
+                         FontWeight="SemiBold" Margin="2,16,0,0"/>
+              <TextBlock x:Name="DomCredNote"
+                         Text="Optional now, but the domain cannot answer anything until it has one."
+                         Foreground="{StaticResource TextFaint}" FontSize="10.5" Margin="2,5,0,0" TextWrapping="Wrap"/>
+
+              <Grid Margin="0,10,0,0">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="*"/>
+                  <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                  <TextBlock Text="USERNAME" Foreground="{StaticResource TextFaint}" FontSize="10.5" FontWeight="SemiBold" Margin="2,0,0,5"/>
+                  <TextBox x:Name="DomCredUser" AutomationProperties.Name="Username" Style="{StaticResource GlassInput}"
+                           ToolTip="DOMAIN\user or user@domain. Across untrusted forests this must be an account in THAT forest."/>
+                </StackPanel>
+                <StackPanel Grid.Column="1" Margin="8,0,0,0">
+                  <TextBlock Text="PASSWORD" Foreground="{StaticResource TextFaint}" FontSize="10.5" FontWeight="SemiBold" Margin="2,0,0,5"/>
+                  <PasswordBox x:Name="DomCredPass" AutomationProperties.Name="Password" Style="{StaticResource GlassPassword}"/>
+                </StackPanel>
+              </Grid>
+
+              <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                <TextBlock Text="TIER" Foreground="{StaticResource TextFaint}" FontSize="10.5"
+                           FontWeight="SemiBold" VerticalAlignment="Center" Margin="2,0,10,0"/>
+                <RadioButton x:Name="DomTierRead"  Style="{StaticResource TabPill}" Content="Read" IsChecked="True" GroupName="domtier"/>
+                <RadioButton x:Name="DomTierWrite" Style="{StaticResource TabPill}" Content="Write" GroupName="domtier"/>
+                <TextBlock Text="DEFAULT" Foreground="{StaticResource TextFaint}" FontSize="10.5"
+                           FontWeight="SemiBold" VerticalAlignment="Center" Margin="18,0,10,0"/>
+                <RadioButton x:Name="DomDefaultYes" Style="{StaticResource TabPill}" Content="Yes" IsChecked="True" GroupName="domdefault"/>
+                <RadioButton x:Name="DomDefaultNo"  Style="{StaticResource TabPill}" Content="No" GroupName="domdefault"/>
+              </StackPanel>
+              <TextBlock Text="Tiers keep a query credential from making changes. Store read first; add write later by opening this panel again."
+                         Foreground="{StaticResource TextFaint}" FontSize="10.5" Margin="2,6,0,0" TextWrapping="Wrap"/>
+
+              <TextBlock x:Name="DomainError" Text="" Foreground="{StaticResource Danger}" FontSize="11.5"
+                         Margin="2,12,0,0" TextWrapping="Wrap" Visibility="Collapsed"/>
+
+              <Grid Margin="0,20,0,0">
+                <Button x:Name="BtnDomainRemove" Style="{StaticResource DangerButton}" Content="Remove"
+                        HorizontalAlignment="Left" Visibility="Collapsed"/>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                  <Button x:Name="BtnDomainCancel" Style="{StaticResource GhostButton}" Content="Cancel" Margin="0,0,8,0"/>
+                  <Button x:Name="BtnDomainSave"   Style="{StaticResource AccentButton}" Content="Save" MinWidth="96"/>
+                </StackPanel>
+              </Grid>
+            </StackPanel>
+          </Border>
+        </Grid>
+
+        <!-- ================= lock overlay ================= -->
+        <Grid x:Name="LockOverlay" Grid.Row="1" Background="#66000000">
+          <Border Style="{StaticResource GlassPanel}" Width="420" Padding="28"
+                  HorizontalAlignment="Center" VerticalAlignment="Center"
+                  Background="{StaticResource GlassFillHi}">
+            <StackPanel>
+              <TextBlock x:Name="LockTitle" Text="Unlock the credential store" Foreground="{StaticResource TextPrimary}"
+                         FontSize="17" FontWeight="SemiBold"/>
+              <TextBlock x:Name="StorePathText" Text="—" Foreground="{StaticResource TextFaint}"
+                         FontSize="11" Margin="0,6,0,0" TextWrapping="Wrap"/>
+
+              <!-- Only when creating. The store is keyed per admin, so a new one needs a name to
+                   file the first wrap under. -->
+              <StackPanel x:Name="CreateFields" Visibility="Collapsed">
+                <TextBlock Text="YOUR NAME" Foreground="{StaticResource TextFaint}" FontSize="10.5"
+                           FontWeight="SemiBold" Margin="2,18,0,6"/>
+                <TextBox x:Name="NewAdminName" AutomationProperties.Name="Your name" Style="{StaticResource GlassInput}"
+                         ToolTip="Whoever this passphrase belongs to. Other admins are added later, each with their own."/>
+              </StackPanel>
+
+              <TextBlock x:Name="PassLabel" Text="PASSPHRASE" Foreground="{StaticResource TextFaint}" FontSize="10.5"
+                         FontWeight="SemiBold" Margin="2,20,0,6"/>
+              <PasswordBox x:Name="PassBox" AutomationProperties.Name="Passphrase" Style="{StaticResource GlassPassword}"/>
+
+              <!-- Confirmation, only when creating. There is no recovery path: the passphrase is
+                   the only way to the data key, so a typo here is an unopenable file. -->
+              <StackPanel x:Name="ConfirmFields" Visibility="Collapsed">
+                <TextBlock Text="CONFIRM PASSPHRASE" Foreground="{StaticResource TextFaint}" FontSize="10.5"
+                           FontWeight="SemiBold" Margin="2,14,0,6"/>
+                <PasswordBox x:Name="PassBox2" AutomationProperties.Name="Confirm passphrase" Style="{StaticResource GlassPassword}"/>
+              </StackPanel>
+
+              <TextBlock x:Name="LockError" Text="" Foreground="{StaticResource Danger}" FontSize="11.5"
+                         Margin="2,10,0,0" TextWrapping="Wrap" Visibility="Collapsed"/>
+              <Button x:Name="BtnUnlockStore" Style="{StaticResource AccentButton}" Content="Unlock"
+                      Margin="0,18,0,0" HorizontalAlignment="Stretch"/>
+              <Button x:Name="BtnLockMode" Style="{StaticResource GhostButton}" Content="Create a new store"
+                      Margin="0,8,0,0" HorizontalAlignment="Stretch"/>
+              <TextBlock x:Name="LockHint"
+                         Text="Each admin has their own passphrase. Yours is tried against every wrap in the file."
+                         Foreground="{StaticResource TextFaint}" FontSize="10.5" Margin="2,14,0,0" TextWrapping="Wrap"/>
+            </StackPanel>
+          </Border>
+        </Grid>
+
+        <!-- ================= status bar ================= -->
+        <Border Grid.Row="2" Background="#10000000">
+          <Grid Margin="18,0,18,0">
+            <TextBlock x:Name="StatusText" Text="ready" Foreground="{StaticResource TextFaint}"
+                       FontSize="11" VerticalAlignment="Center"/>
+            <TextBlock x:Name="StoreText" Text="" Foreground="{StaticResource TextFaint}" FontSize="11"
+                       VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,20,0"/>
+          </Grid>
+        </Border>
+      </Grid>
+    </Grid>
+  </Border>
+</Window>

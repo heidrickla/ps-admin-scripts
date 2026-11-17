@@ -1,0 +1,72 @@
+{
+  "_comment": "Fixture for the 'mock' provider. Exercises the CLI, GUI and tests where production is unreachable. Two untrusted forests plus a child domain, so resolution precedence is visible in a demo.",
+  "domains": [
+    {
+      "dnsDomain": "corp.example.com",
+      "users": [
+        { "samAccountName": "jsmith",  "name": "Jordan Smith",  "displayName": "Jordan Smith",  "userPrincipalName": "jsmith@corp.example.com",  "distinguishedName": "CN=Jordan Smith,OU=Staff,DC=corp,DC=example,DC=com",  "mail": "jsmith@corp.example.com",  "useraccountcontrol": 512, "lockoutTime": 0, "whencreated": "2024-03-11T09:14:00Z" },
+        { "samAccountName": "aokafor", "name": "Ada Okafor",    "displayName": "Ada Okafor",    "userPrincipalName": "aokafor@corp.example.com", "distinguishedName": "CN=Ada Okafor,OU=Staff,DC=corp,DC=example,DC=com",    "mail": "aokafor@corp.example.com", "useraccountcontrol": 512, "lockoutTime": 133700000000000000, "whencreated": "2023-07-02T11:40:00Z" },
+        { "samAccountName": "rlemieux", "name": "Rene Lemieux", "displayName": "Rene Lemieux",  "userPrincipalName": "rlemieux@corp.example.com","distinguishedName": "CN=Rene Lemieux,OU=Staff,DC=corp,DC=example,DC=com",  "mail": "rlemieux@corp.example.com","useraccountcontrol": 514, "lockoutTime": 0, "whencreated": "2022-01-19T15:05:00Z" },
+        { "samAccountName": "svc-backup", "name": "svc-backup", "displayName": "Backup Service","userPrincipalName": "svc-backup@corp.example.com","distinguishedName": "CN=svc-backup,OU=Service,DC=corp,DC=example,DC=com", "mail": null, "useraccountcontrol": 66048, "lockoutTime": 0, "whencreated": "2021-05-30T08:00:00Z" }
+      ],
+      "groups": [
+        { "samAccountName": "Domain Admins", "name": "Domain Admins", "distinguishedName": "CN=Domain Admins,CN=Users,DC=corp,DC=example,DC=com", "members": ["CN=Jordan Smith,OU=Staff,DC=corp,DC=example,DC=com"] },
+        { "samAccountName": "Helpdesk",      "name": "Helpdesk",      "distinguishedName": "CN=Helpdesk,OU=Groups,DC=corp,DC=example,DC=com",      "members": ["CN=Ada Okafor,OU=Staff,DC=corp,DC=example,DC=com", "CN=Rene Lemieux,OU=Staff,DC=corp,DC=example,DC=com"] },
+        { "samAccountName": "FileShare-RW",  "name": "FileShare-RW",  "distinguishedName": "CN=FileShare-RW,OU=Groups,DC=corp,DC=example,DC=com",  "members": [] }
+      ],
+      "_ous_comment": "Every OU here is one that an object above actually lives in, plus one deliberately EMPTY (Contractors) so a demo can exercise the delete path, and one PROTECTED (Domain Controllers) so the refusal path is reachable without a real DC.",
+      "ous": [
+        { "name": "Staff",              "distinguishedName": "OU=Staff,DC=corp,DC=example,DC=com",              "description": "Employee accounts",        "whenCreated": "2019-01-08T09:00:00Z", "protected": true },
+        { "name": "Service",            "distinguishedName": "OU=Service,DC=corp,DC=example,DC=com",            "description": "Service accounts",         "whenCreated": "2019-01-08T09:02:00Z", "protected": true },
+        { "name": "Groups",             "distinguishedName": "OU=Groups,DC=corp,DC=example,DC=com",             "description": "Security groups",          "whenCreated": "2019-01-08T09:03:00Z", "protected": false },
+        { "name": "Workstations",       "distinguishedName": "OU=Workstations,DC=corp,DC=example,DC=com",       "description": "Desktops and laptops",     "whenCreated": "2019-01-08T09:04:00Z", "protected": false },
+        { "name": "Servers",            "distinguishedName": "OU=Servers,DC=corp,DC=example,DC=com",            "description": "Member servers",           "whenCreated": "2019-01-08T09:05:00Z", "protected": true },
+        { "name": "Domain Controllers", "distinguishedName": "OU=Domain Controllers,DC=corp,DC=example,DC=com", "description": "Default DC container",     "whenCreated": "2019-01-08T08:55:00Z", "protected": true },
+        { "name": "Contractors",        "distinguishedName": "OU=Contractors,DC=corp,DC=example,DC=com",        "description": "Empty, for delete tests",  "whenCreated": "2025-06-01T14:20:00Z", "protected": false }
+      ],
+      "computers": [
+        { "name": "DC01",       "dnsHostName": "dc01.corp.example.com",       "operatingSystem": "Windows Server 2022", "distinguishedName": "CN=DC01,OU=Domain Controllers,DC=corp,DC=example,DC=com", "enabled": true, "isDomainController": true },
+        { "name": "WS1",        "dnsHostName": "ws1.corp.example.com",        "operatingSystem": "Windows 11 Pro",      "distinguishedName": "CN=WS1,OU=Workstations,DC=corp,DC=example,DC=com",        "enabled": true },
+        { "_comment": "Deliberately stale, with a FIXED date in the past so it stays stale however long this fixture lives. The fresh machines carry no timestamps rather than recent ones, because a hardcoded 'recent' date rots into a false positive.",
+          "name": "LEGACY-BOX", "dnsHostName": "legacy-box.corp.example.com", "operatingSystem": "Windows Server 2016", "distinguishedName": "CN=LEGACY-BOX,OU=Servers,DC=corp,DC=example,DC=com",      "enabled": false, "pwdLastSet": 131907744000000000, "lastLogonTimestamp": 131934528000000000, "whenCreated": "2016-04-02T08:00:00Z" }
+      ]
+    },
+    {
+      "dnsDomain": "child.corp.example.com",
+      "users": [
+        { "samAccountName": "bchen", "name": "Bo Chen", "displayName": "Bo Chen", "userPrincipalName": "bchen@child.corp.example.com", "distinguishedName": "CN=Bo Chen,OU=Staff,DC=child,DC=corp,DC=example,DC=com", "mail": "bchen@child.corp.example.com", "useraccountcontrol": 512, "lockoutTime": 0, "whencreated": "2025-02-14T10:22:00Z" }
+      ],
+      "groups": [
+        { "samAccountName": "Site Operators", "name": "Site Operators", "distinguishedName": "CN=Site Operators,OU=Groups,DC=child,DC=corp,DC=example,DC=com", "members": ["CN=Bo Chen,OU=Staff,DC=child,DC=corp,DC=example,DC=com"] }
+      ],
+      "ous": [
+        { "name": "Staff",              "distinguishedName": "OU=Staff,DC=child,DC=corp,DC=example,DC=com",              "description": "Site staff",         "whenCreated": "2021-03-02T10:00:00Z", "protected": true },
+        { "name": "Groups",             "distinguishedName": "OU=Groups,DC=child,DC=corp,DC=example,DC=com",             "description": "Site groups",        "whenCreated": "2021-03-02T10:01:00Z", "protected": false },
+        { "name": "Domain Controllers", "distinguishedName": "OU=Domain Controllers,DC=child,DC=corp,DC=example,DC=com", "description": "Default DC container", "whenCreated": "2021-03-02T09:55:00Z", "protected": true }
+      ],
+      "computers": [
+        { "name": "CHILDDC01", "dnsHostName": "dc01.child.corp.example.com", "operatingSystem": "Windows Server 2019", "distinguishedName": "CN=CHILDDC01,OU=Domain Controllers,DC=child,DC=corp,DC=example,DC=com", "enabled": true, "isDomainController": true }
+      ]
+    },
+    {
+      "dnsDomain": "plant.local",
+      "users": [
+        { "samAccountName": "opshift1", "name": "Operator Shift 1", "displayName": "Operator Shift 1", "userPrincipalName": "opshift1@plant.local", "distinguishedName": "CN=Operator Shift 1,OU=Ops,DC=plant,DC=local", "mail": null, "useraccountcontrol": 512, "lockoutTime": 0, "whencreated": "2020-11-03T06:00:00Z" },
+        { "samAccountName": "mvargas",  "name": "Mira Vargas",      "displayName": "Mira Vargas",      "userPrincipalName": "mvargas@plant.local",  "distinguishedName": "CN=Mira Vargas,OU=Ops,DC=plant,DC=local",      "mail": "mvargas@plant.local", "useraccountcontrol": 512, "lockoutTime": 133700000000000000, "whencreated": "2024-09-27T13:31:00Z" }
+      ],
+      "groups": [
+        { "samAccountName": "HMI Operators", "name": "HMI Operators", "distinguishedName": "CN=HMI Operators,OU=Groups,DC=plant,DC=local", "members": ["CN=Operator Shift 1,OU=Ops,DC=plant,DC=local"] }
+      ],
+      "ous": [
+        { "name": "Ops",                "distinguishedName": "OU=Ops,DC=plant,DC=local",                "description": "Operator accounts",    "whenCreated": "2018-05-14T07:00:00Z", "protected": true },
+        { "name": "Groups",             "distinguishedName": "OU=Groups,DC=plant,DC=local",             "description": "Plant groups",         "whenCreated": "2018-05-14T07:01:00Z", "protected": false },
+        { "name": "HMI",                "distinguishedName": "OU=HMI,DC=plant,DC=local",                "description": "HMI panels",           "whenCreated": "2018-05-14T07:02:00Z", "protected": true },
+        { "name": "Domain Controllers", "distinguishedName": "OU=Domain Controllers,DC=plant,DC=local", "description": "Default DC container", "whenCreated": "2018-05-14T06:55:00Z", "protected": true }
+      ],
+      "computers": [
+        { "name": "PLANTDC1", "dnsHostName": "dc1.plant.local", "operatingSystem": "Windows Server 2019", "distinguishedName": "CN=PLANTDC1,OU=Domain Controllers,DC=plant,DC=local", "enabled": true, "isDomainController": true },
+        { "name": "HMI-07",   "dnsHostName": "hmi-07.plant.local", "operatingSystem": "Windows 10 IoT",  "distinguishedName": "CN=HMI-07,OU=HMI,DC=plant,DC=local", "enabled": true }
+      ]
+    }
+  ]
+}
